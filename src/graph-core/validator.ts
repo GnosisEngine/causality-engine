@@ -1,6 +1,5 @@
 // src/graph-core/validator.ts
 
-import { clamp } from '@/common/decimal/index.js'
 import type { MetaGraphRegistry } from '@/meta-graph/index.js'
 
 /**

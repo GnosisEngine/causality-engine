@@ -65,3 +65,11 @@ Phase 10 — Top-level wiring:     `runtime/index.ts`, `src/index.ts`
 Begin Phase 4 — Graph core.
 `graph-core/store.ts` first: in-memory entity and edge storage (Map-backed).
 Then: `graph-core/validator.ts` (write-time checks against MetaGraphRegistry), `graph-core/commit.ts` (atomic commit: validate → log append → mutate → embedding update → HDC update), `graph-core/index.ts`.
+
+## Architectural Convention (added Phase 5)
+**Types crossing module boundaries must be concrete module exports.**
+Do NOT put in types.d.ts any type that another module will import.
+- types.d.ts: internal-only types, documentation, ambient augmentation
+- Source .ts files: all exported interfaces and type aliases
+- Reason: NodeNext resolution treats ambient globals and module exports of the same
+  name as incompatible types. This caused a multi-iteration debugging session in Phase 5.

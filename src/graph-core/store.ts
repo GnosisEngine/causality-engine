@@ -28,8 +28,7 @@ export interface GraphStore {
   putEdge(edge: VerbEdge): void
   removeEdge(id: string): void
   edgeCount(): number
-
-  // ── Indexed lookups ────────────────────────────────────────────────────────
+  allEdges(): IterableIterator<VerbEdge>
   /** All edges where sourceId === id. */
   edgesFrom(sourceId: string): VerbEdge[]
   /** All edges where targetId === id. */
@@ -42,9 +41,9 @@ export interface GraphStore {
 
 export function createGraphStore(): GraphStore {
   const entities = new Map<string, EntityNode>()
-  const edges    = new Map<string, VerbEdge>()
-  const bySource   = new Map<string, Set<string>>()
-  const byTarget   = new Map<string, Set<string>>()
+  const edges = new Map<string, VerbEdge>()
+  const bySource = new Map<string, Set<string>>()
+  const byTarget = new Map<string, Set<string>>()
   const byVerbType = new Map<string, Set<string>>()
 
   function indexEdge(edge: VerbEdge): void {
@@ -85,6 +84,7 @@ export function createGraphStore(): GraphStore {
       if (edge) { deindexEdge(edge); edges.delete(id) }
     },
     edgeCount: () => edges.size,
+    allEdges: () => edges.values(),
 
     edgesFrom: (sourceId) =>
       [...(bySource.get(sourceId) ?? [])].map(id => edges.get(id)!),
