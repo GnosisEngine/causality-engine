@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fief Graph Engine — Design Brief</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0e0f14;color:#ddd8cc;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.7}
+.page{max-width:820px;margin:0 auto;padding:5rem 2.5rem}
+
+.meta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3e3a4a;letter-spacing:.12em;text-transform:uppercase;margin-bottom:1.25rem}
+h1{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:500;line-height:1.08;color:#ede8de;margin-bottom:.5rem;letter-spacing:-.01em}
+.subtitle{font-family:'Cormorant Garamond',serif;font-size:21px;font-style:italic;color:#857e72;margin-bottom:2rem}
+.thesis{font-size:13.5px;color:#857e72;line-height:1.8;max-width:680px;border-left:1px solid #1e1f2c;padding-left:1.25rem;margin-bottom:2rem}
+.thesis strong{color:#a09890;font-weight:normal;font-style:italic}
+
+.props{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:3rem;padding-bottom:3rem;border-bottom:.5px solid #1a1b26}
+.prop{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 11px;border:.5px solid #22233a;color:#4a4558;letter-spacing:.06em}
+
+.section{margin-bottom:0;padding:2.75rem 0;border-bottom:.5px solid #1a1b26}
+.section:last-child{border-bottom:none;padding-bottom:0}
+
+.sh{display:flex;align-items:baseline;gap:16px;margin-bottom:.6rem;flex-wrap:wrap}
+.sn{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2e2c3a;min-width:22px;flex-shrink:0}
+.sf{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:#ede8de}
+.sa{font-family:'IBM Plex Mono',monospace;color:#2e2c3a;font-size:11px}
+.sm{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#3a9b8c}
+
+.sd{font-size:13px;color:#6e6878;line-height:1.7;margin-bottom:1.25rem;padding-left:38px;max-width:700px}
+
+.swot{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding-left:38px}
+.sc{background:#111218;padding:14px 16px;border:.5px solid #1a1b26}
+.sl{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.14em;margin-bottom:9px;text-transform:uppercase}
+.sl.s{color:#2a7a5a}
+.sl.w{color:#b8831e}
+.sl.o{color:#3d6fa8}
+.sl.t{color:#8a2828}
+.sc ul{list-style:none;padding:0}
+.sc li{font-size:12px;color:#807a70;line-height:1.65;padding-left:13px;position:relative;margin-bottom:5px}
+.sc li::before{content:'—';position:absolute;left:0;color:#2e2c3a}
+
+.page-footer{margin-top:4rem;padding-top:2rem;border-top:.5px solid #1a1b26;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#2e2c3a;letter-spacing:.06em}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="meta">HyperCrowd / Fief &nbsp;·&nbsp; Graph Engine Design Brief &nbsp;·&nbsp; v0.1</p>
+  <h1>Fief Graph Engine</h1>
+  <p class="subtitle">Mathematical Foundations &amp; Feature Replacement Analysis</p>
+  <p class="thesis">Standard engineering solutions to graph problems — subscription cascades, ECS cache invalidation, inference deadlock detection, temporal indexing — are <strong>stateful patches on top of a math problem.</strong> The math itself, when chosen correctly, is stateless, deterministic, provably convergent, and replayable to arbitrary time T from a seed. This brief evaluates eight feature class replacements on that basis.</p>
+
+  <div class="props">
+    <span class="prop">stateless evaluation</span>
+    <span class="prop">provable termination</span>
+    <span class="prop">seedable replay</span>
+    <span class="prop">uncertainty as value</span>
+    <span class="prop">epistemic-first design</span>
+  </div>
+
+  <!-- 01 -->
+  <div class="section">
+    <div class="sh">
+      <span class="sn">01</span>
+      <span class="sf">Relational Truth Storage</span>
+      <span class="sa">→</span>
+      <span class="sm">Fuzzy Graph Theory</span>
+    </div>
+    <p class="sd">Replaces binary edge existence checks and ad-hoc weight fields with formal membership values in [0,1] and t-norm composition. Edge weights gain precise semantics: product norm encodes compounding erosion of trust, minimum norm encodes chain-strength limits, Łukasiewicz encodes aggressive decay.</p>
+    <div class="swot">
+      <div class="sc">
+        <p class="sl s">strengths</p>
+        <ul>
+          <li>Weight semantics are formally specified, not implicit conventions</li>
+          <li>"Somewhat allied" is a valid state, not a design hack requiring a threshold decision</li>
+          <li>T-norm choice makes world theory explicit and swappable per verb type</li>
+          <li>Composition rules are stateless — no history needed to evaluate a chain</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl w">weaknesses</p>
+        <ul>
+          <li>T-norm selection is non-obvious; wrong choice means wrong propagation feel</li>
+          <li>Mixed t-norms across verb types require careful documentation</li>
+          <li>Requires content authors to think in [0,1] rather than boolean</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl o">opportunities</p>
+        <ul>
+          <li>Relational truth on a spectrum becomes a design primitive across all systems</li>
+          <li>Players never "cross a threshold into hostile" — they drift, which is more realistic</li>
+          <li>Partial alliance, tentative trust, and residual fear are all expressible without special cases</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl t">threats</p>
+        <ul>
+          <li>Designers will demand binary answers; fuzziness resists "is this working" checks</li>
+          <li>QA cannot assert "ally: true" — requires threshold conventions anyway at presentation layer</li>
+          <li>Cognitive overhead for content authors without prior exposure to fuzzy logic</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 -->
+  <div class="section">
+    <div class="sh">
+      <span class="sn">02</span>
+      <span class="sf">Inference &amp; Transitivity</span>
+      <span class="sa">→</span>
+      <span class="sm">Convergent Policy Functions</span>
+    </div>
+    <p class="sd">Replaces depth caps, explicit cycle detectors, and fixed iteration limits with a requirement that every transitive rule supplies a monotonically decreasing weight function bounded below by zero. Termination is guaranteed by construction. A cycle simply decays to epsilon and stops deriving new edges.</p>
+    <div class="swot">
+      <div class="sc">
+        <p class="sl s">strengths</p>
+        <ul>
+          <li>No cycle detection code — cycles terminate mathematically</li>
+          <li>Convergence is provable analytically at rule registration time</li>
+          <li>Termination is a property of the rule, not the runtime</li>
+          <li>Works correctly regardless of graph topology</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl w">weaknesses</p>
+        <ul>
+          <li>A misconfigured policy function produces wrong propagation silently</li>
+          <li>Analytical convergence verification is non-trivial for exotic functions</li>
+          <li>Designers cannot easily reason about how far an inference "travels"</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl o">opportunities</p>
+        <ul>
+          <li>Weight decay IS the game mechanic — influence fades with social distance as math, not design</li>
+          <li>Different decay curves per verb type produce meaningfully different political textures</li>
+          <li>Policy functions double as tuning knobs with clear behavioral interpretation</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl t">threats</p>
+        <ul>
+          <li>Designers may want hard cutoffs ("stop at two hops") that fight the convergent model</li>
+          <li>Very slow convergence on dense graphs may require epsilon threshold tuning</li>
+          <li>Requires policy function library and discipline to not use raw lambdas</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 -->
+  <div class="section">
+    <div class="sh">
+      <span class="sn">03</span>
+      <span class="sf">ECS State Projection</span>
+      <span class="sa">→</span>
+      <span class="sm">KG Embedding Evaluation</span>
+    </div>
+    <p class="sd">Replaces dirty flags, dependency manifests, version counters, and re-derivation scheduling with entities and relations embedded in a continuous vector space. Relational state is a distance or angle, computed on demand from current graph state. There is no cached value to invalidate — there is only the current geometry.</p>
+    <div class="swot">
+      <div class="sc">
+        <p class="sl s">strengths</p>
+        <ul>
+          <li>No invalidation cascade — the embedding is current by construction</li>
+          <li>Conflicting graph state degrades gracefully rather than throwing a conflict error</li>
+          <li>Output is continuous: "how hostile" rather than "hostile: true"</li>
+          <li>Deterministic from graph state — replay is trivially correct</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl w">weaknesses</p>
+        <ul>
+          <li>Cosine similarity is slower than a flat component read — hot paths may still need a thin ECS layer</li>
+          <li>Dimension count requires empirical tuning; no principled derivation</li>
+          <li>Embedding updates on graph write are not free</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl o">opportunities</p>
+        <ul>
+          <li>"Find entities in a similar relational position to X" becomes nearest-neighbor — no traversal</li>
+          <li>Embedding drift toward hostility is a signal players could surface via skills or abilities</li>
+          <li>Same infrastructure serves world graph, meta-graph, and cross-graph boundary evaluation</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl t">threats</p>
+        <ul>
+          <li>Debugging "why does this NPC hate me" requires inspecting an embedding space — opaque without tooling</li>
+          <li>GM tools for causal explanation must be built proactively, not retrofitted</li>
+          <li>Embedding drift under high-frequency writes may accumulate error</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 -->
+  <div class="section">
+    <div class="sh">
+      <span class="sn">04</span>
+      <span class="sf">Change Propagation</span>
+      <span class="sa">→</span>
+      <span class="sm">Influence Diffusion</span>
+    </div>
+    <p class="sd">Replaces the subscription system, generation-based cascade queues, and zombie listener management with continuous influence diffusion evaluated on demand. Systems query current graph state when they need it; the diffusion equation is the propagation model. No observer registration, no firing order ambiguity.</p>
+    <div class="swot">
+      <div class="sc">
+        <p class="sl s">strengths</p>
+        <ul>
+          <li>No subscription lifecycle — no registration, no deregistration, no leaks</li>
+          <li>No cascade ordering ambiguity; diffusion is commutative</li>
+          <li>Stateless — same inputs always produce same outputs</li>
+          <li>Political graph evolution IS diffusion — one model, multiple purposes</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl w">weaknesses</p>
+        <ul>
+          <li>Full diffusion evaluation costs O(graph size) — cannot run on every tick</li>
+          <li>Some propagation genuinely requires immediacy that diffusion latency cannot satisfy</li>
+          <li>Convergence time on large or dense graphs needs eigenvalue analysis to predict</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl o">opportunities</p>
+        <ul>
+          <li>Stubbornness parameter per faction models ideological rigidity as a continuous variable</li>
+          <li>Convergence rate (second-largest eigenvalue of trust matrix) is a tunable world texture knob</li>
+          <li>Slow convergence means factions hold divergent views for extended periods — which is interesting</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl t">threats</p>
+        <ul>
+          <li>Immediacy requirements (combat events, direct player actions) may force a thin subscription layer anyway</li>
+          <li>Diffusion model unfamiliar to most game engineers — onboarding cost</li>
+          <li>Hard to explain to a player why their reputation "hasn't updated yet" without clear UX signaling</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 -->
+  <div class="section">
+    <div class="sh">
+      <span class="sn">05</span>
+      <span class="sf">Temporal Model</span>
+      <span class="sa">→</span>
+      <span class="sm">Seeded Deterministic Replay</span>
+    </div>
+    <p class="sd">Replaces temporal indexing, snapshot storage, and save-state reconstruction with an append-only event log plus a seed. Any time T is reproducible by replaying the log from the seed. The cross-graph time delay mechanic is a replay offset — one mechanism serving propagation, information asymmetry, and persistence simultaneously.</p>
+    <div class="swot">
+      <div class="sc">
+        <p class="sl s">strengths</p>
+        <ul>
+          <li>Save files are event logs only — no snapshot overhead</li>
+          <li>Any time T is reproducible; time-travel debugging is free</li>
+          <li>The cross-graph delay mechanic is log-offset arithmetic, not a separate system</li>
+          <li>Server crash recovery is log replay from last checkpoint</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl w">weaknesses</p>
+        <ul>
+          <li>Replay to late T is expensive for long-running servers with large logs</li>
+          <li>Floating-point nondeterminism in Node.js can break replay determinism</li>
+          <li>Log compaction strategy required to prevent unbounded growth</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl o">opportunities</p>
+        <ul>
+          <li>World seeds become meaningful — shareable, diffable, historically replayable</li>
+          <li>GM "rewind and investigate" is a log seek, not a feature build</li>
+          <li>Information asymmetry between graphs is log offset — political entities can be "behind" by design</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl t">threats</p>
+        <ul>
+          <li>Any external random source or async ordering variation breaks replay — requires strict write discipline</li>
+          <li>Long logs mean cold start replay is slow; checkpointing strategy must be designed carefully</li>
+          <li>Players exploiting seed knowledge for metagaming if seeds are ever exposed</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06 -->
+  <div class="section">
+    <div class="sh">
+      <span class="sn">06</span>
+      <span class="sf">Agent Epistemic State</span>
+      <span class="sa">→</span>
+      <span class="sm">Dempster-Shafer Belief Functions</span>
+    </div>
+    <p class="sd">Replaces NPC knowledge flags, binary known/unknown fields, and fog-of-war as a separate system with formal belief functions. Each agent holds a distribution over graph state: committed belief, committed disbelief, and explicit ignorance (mass on "I don't know"). Different agents holding contradictory beliefs about the same fact is correct by design, not a bug to be resolved.</p>
+    <div class="swot">
+      <div class="sc">
+        <p class="sl s">strengths</p>
+        <ul>
+          <li>Structured ignorance is a formal value — "I don't know" is not a missing field</li>
+          <li>Agent beliefs combine rigorously via Dempster's rule of combination</li>
+          <li>Outdated beliefs and incorrect beliefs are both expressible without special casing</li>
+          <li>The investigation mechanic has a mathematical foundation: surface portions of the belief function</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl w">weaknesses</p>
+        <ul>
+          <li>Dempster's rule produces counterintuitive results under highly conflicting evidence</li>
+          <li>Computationally heavier than boolean flags — not suitable for per-tick evaluation</li>
+          <li>Requires a new mental model for content authors and QA</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl o">opportunities</p>
+        <ul>
+          <li>Investigation as a gameplay verb — players find out what NPCs believe, not what is true</li>
+          <li>Propagation delay between graphs creates agents with legitimately outdated but internally consistent beliefs</li>
+          <li>Belief divergence between factions is a conflict driver that emerges from the model, not from scripting</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl t">threats</p>
+        <ul>
+          <li>Hard to QA "does this NPC believe the right thing" without belief function inspection tooling</li>
+          <li>Players may perceive NPC ignorance as AI stupidity rather than intentional design</li>
+          <li>Dempster's rule can amplify conflicting evidence into unexpected results under adversarial input</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 07 -->
+  <div class="section">
+    <div class="sh">
+      <span class="sn">07</span>
+      <span class="sf">Cross-Graph Federation</span>
+      <span class="sa">→</span>
+      <span class="sm">DAG-Bounded Boundary Verbs</span>
+    </div>
+    <p class="sd">Replaces shared state, implicit API contracts, and eventual consistency patches with a typed boundary verb whitelist forming a directed acyclic graph at the inter-graph level. Cross-graph references are explicit writes using permitted verb types only. Consistency between graphs is a sheaf condition — local data must agree at overlap or the inconsistency is deliberate and named.</p>
+    <div class="swot">
+      <div class="sc">
+        <p class="sl s">strengths</p>
+        <ul>
+          <li>Inter-graph coupling is always explicit — no silent cross-bleed</li>
+          <li>Circular inter-graph dependencies are rejected at boot by topological sort</li>
+          <li>Each graph instance has independent characteristics (temporal indexing, persistence strategy)</li>
+          <li>The boundary is the interface specification — self-documenting</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl w">weaknesses</p>
+        <ul>
+          <li>Boundary verb taxonomy must be actively maintained as domains evolve</li>
+          <li>Sheaf consistency conditions may be over-specified for the actual use cases</li>
+          <li>Cross-graph ID resolution requires a registry — another component to keep correct</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl o">opportunities</p>
+        <ul>
+          <li>Time delay between graphs is a torn consistency condition — formally definable, exploitable as player-facing mechanics</li>
+          <li>Intelligence, spies, and information asymmetry are structural properties of the boundary, not scripted events</li>
+          <li>Each graph can be swapped, mocked, or versioned independently — strong testability</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl t">threats</p>
+        <ul>
+          <li>Boundary verb proliferation — "just one more" cross-graph edge until the boundary dissolves</li>
+          <li>Requires active governance discipline; no technical enforcement of boundary cleanliness over time</li>
+          <li>Sheaf formalism may be unnecessary complexity if graphs are few and stable</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 08 -->
+  <div class="section">
+    <div class="sh">
+      <span class="sn">08</span>
+      <span class="sf">Cognitive Capacity &amp; Memory</span>
+      <span class="sa">→</span>
+      <span class="sm">Hyperdimensional Computing</span>
+    </div>
+    <p class="sd">Replaces NPC memory as an explicit list, forget-after-N-events rules, and manual memory management with high-dimensional vector bundles. Each NPC's relational context is a superposition of bound entity-verb-entity triples. Superposition is inherently lossy — older and weaker associations become harder to retrieve as new ones are added. Forgetting emerges from the math, not from a designed decay function.</p>
+    <div class="swot">
+      <div class="sc">
+        <p class="sl s">strengths</p>
+        <ul>
+          <li>Forgetting is a mathematical property, not a lifecycle to manage</li>
+          <li>Capacity limits are emergent — no explicit memory budget per NPC</li>
+          <li>Retrieval fidelity degrades gracefully; NPCs misremember rather than fail</li>
+          <li>Interference between memories produces confusion and uncertainty naturally</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl w">weaknesses</p>
+        <ul>
+          <li>Specific memory retention cannot be guaranteed — plot-critical facts may be lost</li>
+          <li>Retrieval is probabilistic — hard to test deterministically</li>
+          <li>Unusual implementation surface; no off-the-shelf Node.js HDC library</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl o">opportunities</p>
+        <ul>
+          <li>Embedding dimension becomes a character attribute — high-memory NPCs are meaningfully different</li>
+          <li>Interference can model trauma, confusion, or cognitive load as emergent states</li>
+          <li>NPCs who have witnessed many events literally cannot recall early ones — this is correct and interesting</li>
+        </ul>
+      </div>
+      <div class="sc">
+        <p class="sl t">threats</p>
+        <ul>
+          <li>Debugging memory failures is opaque — requires specialized inspection tooling</li>
+          <li>Content authors needing predictable NPC recall will fight the probabilistic model</li>
+          <li>Players may perceive memory interference as bugs, not as emergent cognition</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <p class="page-footer">HyperCrowd · Fief · Graph Engine Design Brief · v0.1 · Working Document</p>
+</div>
+</body>
+</html>

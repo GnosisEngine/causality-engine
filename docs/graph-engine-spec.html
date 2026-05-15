@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fief Graph Engine — Technical Specification</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#0d0e12;color:#ccc8be;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.75;display:flex}
+
+/* SIDEBAR */
+nav{width:230px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;padding:2.5rem 0 2rem 1.75rem;border-right:.5px solid #181a22}
+nav::-webkit-scrollbar{width:3px}
+nav::-webkit-scrollbar-thumb{background:#1e2030}
+.nav-logo{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#2a2c3e;letter-spacing:.14em;text-transform:uppercase;margin-bottom:2rem;line-height:1.6}
+.nav-group{margin-bottom:1.5rem}
+.nav-group-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#2a2c3e;letter-spacing:.14em;text-transform:uppercase;margin-bottom:.6rem}
+nav a{display:block;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#3a3c52;text-decoration:none;padding:3px 0;letter-spacing:.03em;transition:color .15s}
+nav a:hover{color:#7a7fa8}
+nav a.active{color:#6a70a8}
+nav a.sub{padding-left:10px;font-size:10px;color:#2e3048}
+
+/* CONTENT */
+main{flex:1;min-width:0;padding:4rem 4rem 6rem 3.5rem;max-width:820px}
+
+/* TYPOGRAPHY */
+.doc-meta{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#252838;letter-spacing:.12em;text-transform:uppercase;margin-bottom:1.5rem}
+h1.doc-title{font-family:'Cormorant Garamond',serif;font-size:46px;font-weight:500;line-height:1.06;color:#e8e2d6;margin-bottom:.4rem;letter-spacing:-.01em}
+.doc-subtitle{font-family:'Cormorant Garamond',serif;font-size:19px;font-style:italic;color:#6a6258;margin-bottom:2.5rem}
+.doc-intro{font-size:14px;color:#6a6258;line-height:1.85;border-left:1px solid #1a1d2a;padding-left:1.25rem;margin-bottom:3rem}
+.doc-intro strong{color:#8a867a;font-weight:normal;font-style:italic}
+
+/* SECTIONS */
+.section{margin-bottom:4rem;padding-top:.5rem}
+h2{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:500;color:#e0dace;margin-bottom:.3rem;letter-spacing:-.005em}
+.section-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#252838;margin-bottom:.4rem}
+h3{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:500;color:#cbc6ba;margin:2rem 0 .5rem;letter-spacing:-.003em}
+h4{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:500;color:#5a5e80;text-transform:uppercase;letter-spacing:.1em;margin:1.5rem 0 .6rem}
+p{margin-bottom:1rem;font-size:14.5px;color:#8a8680}
+p.lead{font-size:15px;color:#9a968e;margin-bottom:1.25rem}
+
+/* CODE */
+pre{background:#080910;border:.5px solid #161826;padding:1.25rem 1.5rem;margin:1rem 0 1.5rem;overflow-x:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;color:#8a96c0}
+pre::-webkit-scrollbar{height:3px}
+pre::-webkit-scrollbar-thumb{background:#1e2030}
+code{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7a80a8;background:#0d0f1a;padding:1px 5px;border:.5px solid #161826}
+.kw{color:#5a6090}
+.ty{color:#7a88b8}
+.st{color:#5a7a60}
+.cm{color:#2e3248;font-style:italic}
+.nu{color:#8a7a5a}
+.k2{color:#9a8a6a}
+.prop{color:#8a96c0}
+
+/* RULE / FORMULA */
+.formula{background:#080910;border-left:2px solid #1e2235;padding:.9rem 1.25rem;margin:1rem 0 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#7078a0;line-height:1.8}
+.formula-label{font-size:10px;color:#252838;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem}
+
+/* CONSTRAINT BOX */
+.constraint{border:.5px solid #1e2030;padding:.9rem 1.25rem;margin:1rem 0 1.5rem;background:#09090f}
+.constraint-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#3a3c52;letter-spacing:.14em;text-transform:uppercase;margin-bottom:.5rem}
+.constraint p{font-size:13px;color:#5a5860;margin-bottom:.4rem}
+.constraint p:last-child{margin-bottom:0}
+.constraint p::before{content:'→ ';color:#252838}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;margin:1rem 0 1.5rem;font-size:12.5px}
+th{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#2e3048;border-bottom:.5px solid #181a22;padding:.6rem .75rem;text-align:left;font-weight:400}
+td{border-bottom:.5px solid #141520;padding:.55rem .75rem;color:#6a6870;vertical-align:top}
+td:first-child{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5a6090}
+
+/* SEPARATOR */
+.rule{border:none;border-top:.5px solid #141620;margin:3rem 0}
+
+/* OPEN Q */
+.oq{background:#09090f;border-left:2px solid #252838;padding:.85rem 1.25rem;margin:.75rem 0;font-size:13px;color:#4a4858}
+.oq strong{color:#5a5870;font-weight:normal;font-family:'IBM Plex Mono',monospace;font-size:11px}
+
+.doc-footer{margin-top:4rem;padding-top:2rem;border-top:.5px solid #141620;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#1e2030;letter-spacing:.06em}
+
+@media(max-width:700px){nav{display:none}main{padding:2rem 1.25rem}}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo">Fief / Graph Engine<br>Technical Spec v0.1</div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Overview</div>
+    <a href="#s1">1. Introduction</a>
+    <a href="#s2">2. Architecture</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Data Structures</div>
+    <a href="#s3">3. Core Types</a>
+    <a href="#s3-1" class="sub">EntityNode</a>
+    <a href="#s3-2" class="sub">VerbEdge</a>
+    <a href="#s3-3" class="sub">GraphInstance</a>
+    <a href="#s3-4" class="sub">EventLogEntry</a>
+    <a href="#s4">4. Meta-Graph</a>
+    <a href="#s4-1" class="sub">MetaVerb</a>
+    <a href="#s4-2" class="sub">Taxonomy edges</a>
+    <a href="#s4-3" class="sub">Registration</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Math Primitives</div>
+    <a href="#s5-1">5.1 Fuzzy Graph</a>
+    <a href="#s5-2">5.2 Policy Functions</a>
+    <a href="#s5-3">5.3 KG Embeddings</a>
+    <a href="#s5-4">5.4 Influence Diffusion</a>
+    <a href="#s5-5">5.5 Dempster-Shafer</a>
+    <a href="#s5-6">5.6 Hyperdimensional</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Federation</div>
+    <a href="#s6">6. Multi-Graph</a>
+    <a href="#s6-1" class="sub">Instances</a>
+    <a href="#s6-2" class="sub">Boundary registry</a>
+    <a href="#s6-3" class="sub">ID resolution</a>
+    <a href="#s6-4" class="sub">Temporal offset</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Runtime</div>
+    <a href="#s7">7. Query Interface</a>
+    <a href="#s8">8. Persistence &amp; Replay</a>
+    <a href="#s9">9. Node.js Model</a>
+    <a href="#s10">10. Open Questions</a>
+  </div>
+</nav>
+
+<main>
+  <p class="doc-meta">HyperCrowd · Fief · Graph Engine · Technical Specification · v0.1 · Working Document</p>
+  <h1 class="doc-title">Fief Graph Engine</h1>
+  <p class="doc-subtitle">Technical Specification</p>
+  <div class="doc-intro">
+    <p>This document specifies the entity-verb-entity (EVE) graph engine underlying the Fief MMORPG. The engine replaces conventional stateful engineering solutions — subscription cascades, ECS cache invalidation, explicit cycle detection, temporal indexing — with <strong>stateless mathematical primitives</strong> whose correctness properties are intrinsic rather than enforced. The graph is the authoritative source of relational truth. All other systems are derived projections.</p>
+    <p>The engine is designed for epistemic slipperiness by default. Relational truth is continuous, not binary. Agent knowledge of that truth is partial, delayed, and uncertain by construction. These are features of the model, not defects to be corrected.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 1. INTRO ═══════ -->
+  <div class="section" id="s1">
+    <div class="section-num">01</div>
+    <h2>Introduction &amp; Guiding Principles</h2>
+
+    <h4>Design axioms</h4>
+    <p class="lead">Every architectural decision traces back to one of the following axioms. When trade-offs arise, the lower-numbered axiom takes precedence.</p>
+
+    <table>
+      <tr><th>#</th><th>Axiom</th><th>Implication</th></tr>
+      <tr><td>A1</td><td>The graph is the source of truth</td><td>No system may hold authoritative relational state outside the graph. ECS and other caches are projections.</td></tr>
+      <tr><td>A2</td><td>Math over machinery</td><td>Where a mathematical property ensures correctness, no runtime enforcement mechanism is needed or desired.</td></tr>
+      <tr><td>A3</td><td>Epistemic limits are design</td><td>Players and NPCs having partial, delayed, incorrect knowledge of the world is correct behavior, not a deficiency.</td></tr>
+      <tr><td>A4</td><td>Uncertainty is a value</td><td>Relational state is a continuous quantity with associated confidence. Binary forced answers are a presentation-layer concern.</td></tr>
+      <tr><td>A5</td><td>Seedable determinism</td><td>All graph evolution must be reproducible from an event log and a seed. Nondeterministic external state is prohibited in write paths.</td></tr>
+    </table>
+
+    <h4>What this spec covers</h4>
+    <p>Data structures for all graph primitives. Mathematical primitive interfaces and their runtime contracts. Multi-graph federation model. Query interface shape. Persistence and replay protocol. Node.js-specific runtime constraints.</p>
+
+    <h4>What this spec defers</h4>
+    <p>Fluent query DSL syntax. Specific game-domain verb taxonomies. Rendering and UI. Auth and session management. Content tooling for designers.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 2. ARCH ════════ -->
+  <div class="section" id="s2">
+    <div class="section-num">02</div>
+    <h2>System Architecture</h2>
+
+    <p class="lead">The engine consists of five layers. Each layer depends only on layers below it. No upward dependencies are permitted.</p>
+
+    <table>
+      <tr><th>Layer</th><th>Name</th><th>Responsibility</th></tr>
+      <tr><td>L5</td><td>Query Interface</td><td>Traversal, scoring, nearest-neighbor, diffusion evaluation. Async-safe.</td></tr>
+      <tr><td>L4</td><td>Projection Cache</td><td>ECS-compatible derived values. Dirty versioning. Worker thread pool.</td></tr>
+      <tr><td>L3</td><td>Math Primitives</td><td>Fuzzy composition, embedding ops, diffusion, DS belief, HDC bundle.</td></tr>
+      <tr><td>L2</td><td>Graph Core</td><td>Entity and edge storage. Event log. Meta-graph. Write validation.</td></tr>
+      <tr><td>L1</td><td>Persistence</td><td>Event log flush. Snapshot checkpoints. Graph ID registry.</td></tr>
+    </table>
+
+    <h4>Graph instances in play</h4>
+    <table>
+      <tr><th>Instance</th><th>Mutable</th><th>Temporal</th><th>In-memory policy</th><th>Primary owner</th></tr>
+      <tr><td>static-rules</td><td>No</td><td>No</td><td>Always fully loaded</td><td>Server boot</td></tr>
+      <tr><td>dynamic-world</td><td>Yes</td><td>Optional</td><td>Hot zones in memory, cold paged</td><td>Zone servers</td></tr>
+      <tr><td>political</td><td>Yes</td><td>Yes</td><td>Fully loaded, persisted with history</td><td>Global server</td></tr>
+    </table>
+
+    <p>Additional graph instances are permitted. Each must declare its characteristics at registration. Cross-instance references follow the boundary verb protocol defined in §6.</p>
+
+    <h4>Data flow</h4>
+    <p>Game systems write to the graph via the event log (L2). The graph validates writes against the meta-graph and active inference rules. On commit, the math primitives layer updates affected embeddings and belief bundles. The projection cache marks dependent components dirty. Query callers read either directly from the graph or from the projection cache depending on their latency requirements.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 3. TYPES ═══════ -->
+  <div class="section" id="s3">
+    <div class="section-num">03</div>
+    <h2>Core Data Structures</h2>
+
+    <div id="s3-1">
+      <h3>3.1 EntityNode</h3>
+      <p>The fundamental node type. All entities in all graph instances conform to this structure. Type-specific extension data lives in <code>properties</code>.</p>
+<pre><span class="cm">/**
+ * @typedef {Object} EntityNode
+ */</span>
+{
+  <span class="prop">id</span>:            <span class="ty">string</span>,         <span class="cm">// UUID v4. Globally unique across all graphs.</span>
+  <span class="prop">graphId</span>:       <span class="ty">string</span>,         <span class="cm">// Owning graph instance id.</span>
+  <span class="prop">type</span>:          <span class="ty">string</span>,         <span class="cm">// Registered entity type from type registry.</span>
+  <span class="prop">properties</span>:    <span class="ty">Map&lt;string,any&gt;</span>,<span class="cm">// Type-specific extension data. Serialisable.</span>
+
+  <span class="cm">// KG embedding — see §5.3</span>
+  <span class="prop">embedding</span>:     <span class="ty">Float32Array</span>,   <span class="cm">// Length = GraphInstance.embeddingDim.</span>
+  <span class="prop">embeddingVer</span>:  <span class="ty">number</span>,         <span class="cm">// Incremented on each embedding update.</span>
+
+  <span class="cm">// HDC memory bundle — see §5.6. Null if instance does not use HDC.</span>
+  <span class="prop">memoryBundle</span>:  <span class="ty">Int8Array | null</span>,<span class="cm">// Length = GraphInstance.hdcDim.</span>
+
+  <span class="cm">// Lifecycle</span>
+  <span class="prop">logSeqNum</span>:     <span class="ty">number</span>,         <span class="cm">// Event log sequence number at creation.</span>
+  <span class="prop">version</span>:       <span class="ty">number</span>,         <span class="cm">// Incremented on any neighborhood change.</span>
+}</pre>
+    </div>
+
+    <div id="s3-2">
+      <h3>3.2 VerbEdge</h3>
+      <p>The fundamental edge type. All edges are directed. Bidirectional relationships are modeled as two edges, potentially with asymmetric weights. Inferred edges are distinguished from asserted edges by <code>authority</code>.</p>
+<pre><span class="cm">/**
+ * @typedef {Object} VerbEdge
+ */</span>
+{
+  <span class="prop">id</span>:            <span class="ty">string</span>,         <span class="cm">// UUID v4.</span>
+  <span class="prop">sourceId</span>:      <span class="ty">string</span>,         <span class="cm">// EntityNode id. May reference a foreign graph.</span>
+  <span class="prop">targetId</span>:      <span class="ty">string</span>,         <span class="cm">// EntityNode id. May reference a foreign graph.</span>
+  <span class="prop">verbType</span>:      <span class="ty">string</span>,         <span class="cm">// Registered verb from meta-graph. See §4.</span>
+
+  <span class="cm">// Fuzzy membership — see §5.1</span>
+  <span class="prop">weight</span>:        <span class="ty">number</span>,         <span class="cm">// [0, 1]. Fuzzy membership value.</span>
+  <span class="prop">tNorm</span>:         <span class="ty">TNormId</span>,        <span class="cm">// Composition rule. Inherited from MetaVerb if null.</span>
+
+  <span class="cm">// Epistemic provenance — see §5.5</span>
+  <span class="prop">authority</span>:     <span class="ty">Authority</span>,      <span class="cm">// 'system' | 'inference' | 'player' | 'world'</span>
+  <span class="prop">confidence</span>:    <span class="ty">number</span>,         <span class="cm">// [0, 1]. Asserted edges default to 1.0.</span>
+  <span class="prop">assertedBy</span>:    <span class="ty">string</span>,         <span class="cm">// Entity id of the asserting agent. Null for system.</span>
+
+  <span class="cm">// Optional extension</span>
+  <span class="prop">properties</span>:    <span class="ty">Map&lt;string,any&gt;</span>,<span class="cm">// Arbitrary metadata. Must be serialisable.</span>
+  <span class="prop">expiresAt</span>:     <span class="ty">number | null</span>,   <span class="cm">// Log sequence number at which this edge is void.</span>
+
+  <span class="cm">// Lifecycle</span>
+  <span class="prop">graphId</span>:       <span class="ty">string</span>,         <span class="cm">// Owning graph. May differ from source/target graphs.</span>
+  <span class="prop">logSeqNum</span>:     <span class="ty">number</span>,         <span class="cm">// Event log seq at creation.</span>
+}</pre>
+
+      <div class="constraint">
+        <div class="constraint-label">Invariants</div>
+        <p>weight is always in [0, 1]. Values outside this range are rejected at write time.</p>
+        <p>confidence is always in [0, 1]. Inferred edges must have confidence &lt; 1.0.</p>
+        <p>A VerbEdge whose verbType is a boundary verb (see §6.2) must have sourceId and targetId in different graph instances.</p>
+        <p>expiresAt, if set, must be greater than the current log sequence number at write time.</p>
+      </div>
+    </div>
+
+    <div id="s3-3">
+      <h3>3.3 GraphInstance</h3>
+      <p>Configuration object for a graph instance. Registered at boot. Immutable after registration.</p>
+<pre>{
+  <span class="prop">id</span>:              <span class="ty">string</span>,          <span class="cm">// Unique short identifier, e.g. 'static-rules'.</span>
+  <span class="prop">label</span>:           <span class="ty">string</span>,
+
+  <span class="cm">// Characteristics</span>
+  <span class="prop">mutable</span>:         <span class="ty">boolean</span>,
+  <span class="prop">temporalIndex</span>:   <span class="ty">boolean</span>,         <span class="cm">// If true, mutations append; current = materialized view.</span>
+  <span class="prop">persistenceMode</span>: <span class="ty">PersistenceMode</span>, <span class="cm">// 'full' | 'log-only' | 'ephemeral'</span>
+
+  <span class="cm">// Math primitive configuration</span>
+  <span class="prop">embeddingDim</span>:    <span class="ty">number</span>,          <span class="cm">// KG embedding dimensionality. Default: 128.</span>
+  <span class="prop">hdcDim</span>:          <span class="ty">number | null</span>,   <span class="cm">// HDC bundle size. Null disables HDC for this graph.</span>
+  <span class="prop">defaultTNorm</span>:    <span class="ty">TNormId</span>,         <span class="cm">// Fallback t-norm for edges without explicit tNorm.</span>
+  <span class="prop">epsilon</span>:         <span class="ty">number</span>,          <span class="cm">// Inference termination threshold. Default: 0.001.</span>
+
+  <span class="cm">// Memory management</span>
+  <span class="prop">hotZoneSelector</span>: <span class="ty">Function | null</span>, <span class="cm">// Returns true for entities to keep in memory.</span>
+  <span class="prop">pageSize</span>:        <span class="ty">number</span>,          <span class="cm">// Entities per page for cold storage. Default: 512.</span>
+}</pre>
+    </div>
+
+    <div id="s3-4">
+      <h3>3.4 EventLogEntry</h3>
+      <p>Every mutation to the graph — including inferred edge updates — is recorded as an event log entry. The log is the source of truth for persistence and replay. No mutation occurs without a log entry.</p>
+<pre>{
+  <span class="prop">seq</span>:        <span class="ty">number</span>,           <span class="cm">// Monotonically increasing. Global across all graphs.</span>
+  <span class="prop">graphId</span>:    <span class="ty">string</span>,
+  <span class="prop">type</span>:       <span class="ty">EventType</span>,        <span class="cm">// See event type table below.</span>
+  <span class="prop">payload</span>:    <span class="ty">Object</span>,           <span class="cm">// Type-specific. Must be fully serialisable.</span>
+  <span class="prop">rngState</span>:   <span class="ty">string</span>,           <span class="cm">// PRNG state snapshot at write time for replay.</span>
+  <span class="prop">wallMs</span>:     <span class="ty">number</span>,           <span class="cm">// Wall-clock ms. For observability only; not used in replay.</span>
+}</pre>
+
+      <table>
+        <tr><th>EventType</th><th>Payload fields</th></tr>
+        <tr><td>entity:create</td><td>EntityNode (full)</td></tr>
+        <tr><td>entity:remove</td><td>id, graphId</td></tr>
+        <tr><td>edge:add</td><td>VerbEdge (full)</td></tr>
+        <tr><td>edge:update</td><td>id, graphId, delta (changed fields only)</td></tr>
+        <tr><td>edge:remove</td><td>id, graphId</td></tr>
+        <tr><td>edge:infer</td><td>VerbEdge, derivedFrom: string[] (source edge ids)</td></tr>
+        <tr><td>embedding:update</td><td>entityId, graphId, embedding (Float32Array as base64)</td></tr>
+        <tr><td>hdc:update</td><td>entityId, graphId, memoryBundle (as base64)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 4. META ═════════ -->
+  <div class="section" id="s4">
+    <div class="section-num">04</div>
+    <h2>Meta-Graph — Verb Taxonomy</h2>
+
+    <p class="lead">The meta-graph is a second graph whose nodes are verb types and whose edges are ontological relationships between them. It lives entirely in memory, is loaded at boot, and is treated as read-only during server operation unless a rule registration transaction is in progress.</p>
+
+    <div id="s4-1">
+      <h3>4.1 MetaVerb</h3>
+<pre>{
+  <span class="prop">id</span>:               <span class="ty">string</span>,          <span class="cm">// Unique verb type identifier, e.g. 'isAlliedWith'.</span>
+  <span class="prop">label</span>:            <span class="ty">string</span>,
+  <span class="prop">domain</span>:           <span class="ty">string[]</span>,        <span class="cm">// Permitted source entity types.</span>
+  <span class="prop">range</span>:            <span class="ty">string[]</span>,        <span class="cm">// Permitted target entity types.</span>
+  <span class="prop">defaultTNorm</span>:     <span class="ty">TNormId</span>,         <span class="cm">// Composition t-norm for this verb type.</span>
+  <span class="prop">defaultPolicy</span>:    <span class="ty">PolicyFnId</span>,      <span class="cm">// Convergence policy for transitive rules.</span>
+  <span class="prop">inferenceStratum</span>: <span class="ty">number</span>,          <span class="cm">// Assigned at registration by stratification.</span>
+  <span class="prop">symmetric</span>:        <span class="ty">boolean</span>,         <span class="cm">// If true, assert A→B also asserts B→A.</span>
+  <span class="prop">crossGraphAllowed</span>:<span class="ty">boolean</span>,         <span class="cm">// May this verb type cross graph boundaries?</span>
+}</pre>
+    </div>
+
+    <div id="s4-2">
+      <h3>4.2 Taxonomy edge types</h3>
+      <table>
+        <tr><th>Taxonomy verb</th><th>Semantics</th><th>Effect on queries</th></tr>
+        <tr><td>isSubtypeOf</td><td>A is a specialization of B</td><td>Queries for B match A edges automatically</td></tr>
+        <tr><td>isInverseOf</td><td>A's target→source is B</td><td>Asserting A auto-asserts B in reverse direction</td></tr>
+        <tr><td>implies</td><td>Presence of A with weight w implies B with w × factor</td><td>Inference rule registered automatically</td></tr>
+        <tr><td>excludes</td><td>A and B cannot coexist above threshold on same pair</td><td>Write validation rejects or overwrites conflicting edge</td></tr>
+        <tr><td>requiresPolicy</td><td>Transitive rules on A must use named policy function</td><td>Policy validation at rule registration</td></tr>
+      </table>
+    </div>
+
+    <div id="s4-3">
+      <h3>4.3 Registration and validation</h3>
+      <p>MetaVerb registration is a transaction. On commit, the system runs a topological sort over all inference rules, assigning strata. If a cycle through negation is detected, the transaction is rolled back and the error is reported with the offending rule chain identified. No runtime behavior is affected.</p>
+
+      <div class="constraint">
+        <div class="constraint-label">Registration invariants</div>
+        <p>Every transitive inference rule must name a registered PolicyFn that the engine can verify converges to zero.</p>
+        <p>No two MetaVerb registrations may share an id within the same graph instance.</p>
+        <p>A MetaVerb with crossGraphAllowed: false may not appear in the boundary verb registry (§6.2).</p>
+        <p>Symmetric verbs with an explicit isInverseOf edge are rejected (self-contradictory).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 5. MATH ═════════ -->
+  <div class="section" id="s5-1">
+    <div class="section-num">05.1</div>
+    <h2>Fuzzy Graph Theory — Relational Truth</h2>
+
+    <p class="lead">All edge weights are fuzzy membership values in [0, 1]. Composition of relationships along a path uses a t-norm, which must be selected per verb type at registration. The t-norm is the primary lever for how relationship strength propagates across hops.</p>
+
+    <h4>T-norm implementations</h4>
+    <table>
+      <tr><th>TNormId</th><th>Formula</th><th>Semantics</th><th>Use case</th></tr>
+      <tr><td>minimum</td><td>min(a, b)</td><td>Chain strength = weakest link</td><td>Authority chains, delegation</td></tr>
+      <tr><td>product</td><td>a × b</td><td>Strength erodes with each hop</td><td>Trust, political influence</td></tr>
+      <tr><td>lukasiewicz</td><td>max(0, a+b−1)</td><td>Aggressive decay, zero floor</td><td>Fear, debt, coercion</td></tr>
+      <tr><td>drastic</td><td>min(a,b) if max=1, else 0</td><td>Requires one perfect link</td><td>Direct kinship, treaty obligations</td></tr>
+    </table>
+
+    <h4>Composition along a path</h4>
+    <div class="formula">
+      <div class="formula-label">Definition — path weight</div>
+      w(path) = tNorm(w₁, tNorm(w₂, tNorm(w₃, ... wₙ)))
+      
+where wᵢ is the weight of the i-th edge and tNorm is the verb's registered t-norm.
+A path weight below GraphInstance.epsilon is treated as non-existent.
+    </div>
+
+    <h4>Exclusion handling</h4>
+    <p>When a write would create an edge whose verbType excludes an existing edge on the same (source, target) pair, the resolution is determined by the <code>excludes</code> taxonomy edge's <code>resolutionPolicy</code> property: <code>reject</code> rejects the new write; <code>overwrite</code> removes the conflicting edge; <code>weaken</code> reduces both weights by the incoming weight value. If no resolutionPolicy is set, <code>reject</code> is the default.</p>
+  </div>
+
+  <div class="section" id="s5-2">
+    <div class="section-num">05.2</div>
+    <h2>Convergent Policy Functions — Inference</h2>
+
+    <p class="lead">Every inference rule that operates transitively must supply a policy function. The policy function takes a weight and a hop count and returns a new weight. The engine verifies at registration time that the function converges to zero.</p>
+
+    <h4>Interface</h4>
+<pre><span class="cm">/**
+ * A policy function that controls transitive inference weight decay.
+ * MUST satisfy: lim(hop → ∞) apply(w₀, hop) = 0 for all w₀ ∈ (0, 1].
+ *
+ * @typedef {Object} PolicyFn
+ */</span>
+{
+  <span class="prop">id</span>:          <span class="ty">string</span>,
+  <span class="prop">apply</span>:       <span class="ty">(weight: number, hop: number) => number</span>,
+  <span class="prop">epsilon</span>:     <span class="ty">number</span>,    <span class="cm">// Weight below which inference halts. Default: inherit from graph.</span>
+  <span class="prop">verify</span>:      <span class="ty">(w0: number, maxHops?: number) => boolean</span>,
+                           <span class="cm">// Engine calls this at registration. Must return true.</span>
+}</pre>
+
+    <h4>Built-in policy functions</h4>
+<pre><span class="cm">// Geometric decay. Most common case.</span>
+<span class="kw">const</span> <span class="prop">geometric</span> = (discount) => ({
+  <span class="prop">id</span>: <span class="st">`geometric(${discount})`</span>,
+  <span class="prop">apply</span>: (w, hop) => w * Math.pow(discount, hop),
+  <span class="prop">epsilon</span>: <span class="nu">0.001</span>,
+  <span class="prop">verify</span>: () => discount > <span class="nu">0</span> && discount < <span class="nu">1</span>,
+})
+
+<span class="cm">// Harmonic decay. Slower fall-off than geometric, useful for cultural influence.</span>
+<span class="kw">const</span> <span class="prop">harmonic</span> = ({
+  <span class="prop">id</span>: <span class="st">'harmonic'</span>,
+  <span class="prop">apply</span>: (w, hop) => w / (hop + <span class="nu">1</span>),
+  <span class="prop">epsilon</span>: <span class="nu">0.001</span>,
+  <span class="prop">verify</span>: () => <span class="kw">true</span>,
+})
+
+<span class="cm">// Threshold cutoff. Converges immediately after N hops.</span>
+<span class="cm">// Use when you want explicit hop limits without fighting the model.</span>
+<span class="kw">const</span> <span class="prop">cutoff</span> = (maxHops) => ({
+  <span class="prop">id</span>: <span class="st">`cutoff(${maxHops})`</span>,
+  <span class="prop">apply</span>: (w, hop) => hop >= maxHops ? <span class="nu">0</span> : w,
+  <span class="prop">epsilon</span>: <span class="nu">0.001</span>,
+  <span class="prop">verify</span>: () => maxHops > <span class="nu">0</span>,
+})</pre>
+
+    <h4>Verification procedure</h4>
+    <p>At registration, the engine calls <code>verify()</code> and additionally runs a simulation: starting at weight 1.0, it applies the policy function for up to 10,000 hops, confirming the output crosses epsilon before termination. Functions that do not cross epsilon within 10,000 hops are rejected. This simulation is cheap and runs once at boot.</p>
+  </div>
+
+  <div class="section" id="s5-3">
+    <div class="section-num">05.3</div>
+    <h2>KG Embeddings — State Projection</h2>
+
+    <p class="lead">Each entity holds an embedding vector in a continuous space of dimension <code>GraphInstance.embeddingDim</code>. Relational state between two entities is a geometric relationship in this space rather than a boolean flag. The projection cache reads embedding distances rather than derived ECS values wherever the latency budget allows.</p>
+
+    <h4>TransE update rule</h4>
+    <div class="formula">
+      <div class="formula-label">Definition — TransE score</div>
+      score(h, r, t) = − ‖h + r − t‖₂
+
+where h = embedding of source entity
+      r = embedding of verb type (per-verb vector, stored in MetaVerb)
+      t = embedding of target entity
+      
+Higher score = stronger evidence the (h, r, t) triple is true.
+An edge with weight w contributes: update t += α × w × (h + r − t)
+where α is the learning rate (default: 0.01).
+    </div>
+
+    <h4>Embedding operations</h4>
+<pre><span class="cm">/**
+ * Updates embeddings for source, verb, and target on edge write.
+ * Called synchronously during graph commit, before log flush.
+ */</span>
+<span class="kw">function</span> <span class="prop">updateEmbedding</span>(edge: VerbEdge, graph: GraphInstance): <span class="ty">void</span>
+
+<span class="cm">/**
+ * Returns score in [0, 1] (normalised from TransE distance).
+ * Does not traverse the graph. O(d) where d = embeddingDim.
+ */</span>
+<span class="kw">function</span> <span class="prop">score</span>(sourceId, verbType, targetId, graph): <span class="ty">number</span>
+
+<span class="cm">/**
+ * Returns k entities whose embeddings are nearest to
+ * (source.embedding + verbType.embedding).
+ * Used for "entities in a similar relational position" queries.
+ * O(n × d) naive; use HNSW index for n > 10,000.
+ */</span>
+<span class="kw">function</span> <span class="prop">nearest</span>(sourceId, verbType, k, graph): <span class="ty">EntityNode[]</span></pre>
+
+    <div class="constraint">
+      <div class="constraint-label">Performance notes</div>
+      <p>Embedding updates are synchronous during commit. Keep embeddingDim ≤ 256 for the dynamic-world graph to maintain acceptable commit latency on Node.js's main thread.</p>
+      <p>The static-rules graph, being immutable, has its embeddings computed once at boot and never updated.</p>
+      <p>For graphs with more than 50,000 entities, delegate nearest() to a worker thread with an HNSW index.</p>
+    </div>
+  </div>
+
+  <div class="section" id="s5-4">
+    <div class="section-num">05.4</div>
+    <h2>Influence Diffusion — Change Propagation</h2>
+
+    <p class="lead">Political belief and reputation evolution are modeled using the DeGroot influence diffusion model. Systems query the current diffused state on demand rather than registering for change notifications. The diffusion computation is the propagation model. No observer pattern is required for slow-changing relational state.</p>
+
+    <h4>DeGroot model</h4>
+    <div class="formula">
+      <div class="formula-label">Definition — DeGroot update</div>
+      b(t+1) = T · b(t)
+
+where b(t) = belief vector over all entities at step t
+      T    = trust/influence matrix derived from edge weights
+      Tᵢⱼ  = weight of edge (j → i) of the relevant influence verb type
+
+Friedkin-Johnsen extension with stubbornness parameter λᵢ ∈ [0, 1]:
+      b(t+1)ᵢ = λᵢ · b(0)ᵢ + (1 − λᵢ) · Σⱼ Tᵢⱼ · b(t)ⱼ
+
+λᵢ = 1.0 means entity i ignores all external influence (fully stubborn).
+λᵢ = 0.0 means entity i is fully persuadable (no anchor).
+    </div>
+
+    <h4>Interface</h4>
+<pre><span class="cm">/**
+ * @typedef {Object} DiffusionConfig
+ */</span>
+{
+  <span class="prop">verbType</span>:      <span class="ty">string</span>,   <span class="cm">// Which edge type forms the influence matrix.</span>
+  <span class="prop">maxSteps</span>:      <span class="ty">number</span>,   <span class="cm">// Iteration cap. Default: 100.</span>
+  <span class="prop">convergeDelta</span>: <span class="ty">number</span>,   <span class="cm">// Stop when max belief change per step &lt; this. Default: 0.001.</span>
+}
+
+<span class="cm">/**
+ * Evaluates DeGroot diffusion from a given starting entity.
+ * Returns belief values for reachable entities after convergence.
+ * Runs in a worker thread for graphs with > 1000 entities.
+ */</span>
+<span class="kw">async function</span> <span class="prop">diffuse</span>(
+  startId:   <span class="ty">string</span>,
+  config:    <span class="ty">DiffusionConfig</span>,
+  graph:     <span class="ty">GraphInstance</span>
+): <span class="ty">Promise&lt;Map&lt;string, number&gt;&gt;</span>   <span class="cm">// entityId → converged belief</span></pre>
+
+    <h4>Stubbornness as entity property</h4>
+    <p>The stubbornness parameter λ is stored in <code>EntityNode.properties.stubbornness</code> as a number in [0, 1]. Default is 0.5 if not set. Game systems may modify stubbornness through normal graph writes — it does not require a special API.</p>
+
+    <h4>Convergence rate as world texture</h4>
+    <p>The second-largest eigenvalue of the trust matrix T determines how quickly beliefs homogenize. A value near 0 means rapid convergence; near 1 means sustained divergence. Designers can tune this indirectly by adjusting base edge weights and stubbornness defaults per entity type, creating political landscapes with different levels of ideological rigidity without any additional code.</p>
+  </div>
+
+  <div class="section" id="s5-5">
+    <div class="section-num">05.5</div>
+    <h2>Dempster-Shafer — Agent Epistemic State</h2>
+
+    <p class="lead">Each agent capable of holding beliefs maintains a Dempster-Shafer belief function over graph propositions of interest. This is distinct from the graph's objective state. An agent's belief function represents what it knows, suspects, and is ignorant of — including the distinction between "I believe this is false" and "I have no information."</p>
+
+    <h4>Belief function structure</h4>
+<pre><span class="cm">/**
+ * A basic probability assignment (BPA) over a two-element frame
+ * {true, false} for a specific proposition.
+ *
+ * @typedef {Object} BeliefFunction
+ */</span>
+{
+  <span class="prop">proposition</span>: <span class="ty">string</span>,    <span class="cm">// Serialised graph pattern, e.g. '(A,isAlliedWith,B)'.</span>
+  <span class="prop">mTrue</span>:       <span class="ty">number</span>,    <span class="cm">// Mass assigned to {true}. Evidence for.</span>
+  <span class="prop">mFalse</span>:      <span class="ty">number</span>,    <span class="cm">// Mass assigned to {false}. Evidence against.</span>
+  <span class="prop">mUnknown</span>:    <span class="ty">number</span>,    <span class="cm">// Mass assigned to {true, false}. Explicit ignorance.</span>
+                           <span class="cm">// Invariant: mTrue + mFalse + mUnknown = 1.0</span>
+  <span class="prop">bel</span>:         <span class="ty">number</span>,    <span class="cm">// Derived. Belief lower bound = mTrue.</span>
+  <span class="prop">pl</span>:          <span class="ty">number</span>,    <span class="cm">// Derived. Plausibility upper bound = mTrue + mUnknown.</span>
+  <span class="prop">updatedAt</span>:   <span class="ty">number</span>,    <span class="cm">// Log seq of last update to this belief.</span>
+}</pre>
+
+    <h4>Dempster's rule of combination</h4>
+    <div class="formula">
+      <div class="formula-label">Combining two belief functions over the same proposition</div>
+      m₁₂({true})    = (m₁(T)·m₂(T) + m₁(T)·m₂(Ω) + m₁(Ω)·m₂(T)) / K
+      m₁₂({false})   = (m₁(F)·m₂(F) + m₁(F)·m₂(Ω) + m₁(Ω)·m₂(F)) / K
+      m₁₂({Ω})       = (m₁(Ω)·m₂(Ω)) / K
+
+where K = 1 − (m₁(T)·m₂(F) + m₁(F)·m₂(T))   [normalisation, conflict term]
+      Ω = {true, false}   [the ignorance set]
+
+If K = 0, the two sources are in total conflict. Resolution policy: retain higher-authority source.
+    </div>
+
+    <h4>Belief propagation across graph boundary</h4>
+    <p>When a boundary edge delivers an update (after its temporal offset elapses), the receiving agent's belief function is updated via Dempster's rule using the incoming evidence, discounted by the boundary verb's <code>transmissionFidelity</code> property (a number in [0, 1] that adds mass to mUnknown proportional to 1 − fidelity). Low-fidelity boundary verbs represent rumour, second-hand intelligence, or corrupted transmission. High-fidelity verbs represent direct observation or formal treaty notification.</p>
+  </div>
+
+  <div class="section" id="s5-6">
+    <div class="section-num">05.6</div>
+    <h2>Hyperdimensional Computing — Agent Memory</h2>
+
+    <p class="lead">NPC relational memory is modeled as a hyperdimensional bundle: a single high-dimensional vector formed by superposing bound entity-verb-entity triples. Superposition is inherently lossy. Memory degrades as new experiences are added without explicit forgetting rules. The dimension size is a character attribute — high-intelligence NPCs have larger bundles and forget less.</p>
+
+    <h4>Operations</h4>
+<pre><span class="cm">// All vectors are Int8Array of length GraphInstance.hdcDim (e.g. 8192).
+// Binary HDC: values are +1 or -1.</span>
+
+<span class="cm">/**
+ * Generates a random quasi-orthogonal base vector for an entity or verb type.
+ * Each unique id always produces the same vector from the same seed.
+ */</span>
+<span class="kw">function</span> <span class="prop">baseVector</span>(id: <span class="ty">string</span>, seed: <span class="ty">number</span>, dim: <span class="ty">number</span>): <span class="ty">Int8Array</span>
+
+<span class="cm">/**
+ * Bind two vectors. Encodes a relationship.
+ * bind(A, B) ≠ A, ≠ B, but is retrievable.
+ * Implemented as element-wise XOR for binary HDC.
+ */</span>
+<span class="kw">function</span> <span class="prop">bind</span>(v1: <span class="ty">Int8Array</span>, v2: <span class="ty">Int8Array</span>): <span class="ty">Int8Array</span>
+
+<span class="cm">/**
+ * Superpose (bundle) an experience into an existing memory.
+ * bundle += bind(bind(sourceVec, verbVec), targetVec)
+ * Then re-binarise by sign(). Old memories gradually lose retrieval fidelity.
+ */</span>
+<span class="kw">function</span> <span class="prop">remember</span>(bundle: <span class="ty">Int8Array</span>, experience: <span class="ty">VerbEdge</span>, seed: <span class="ty">number</span>): <span class="ty">Int8Array</span>
+
+<span class="cm">/**
+ * Query bundle for the presence of a relationship.
+ * Returns cosine similarity in [0, 1]. Above 0.5 indicates likely recall.
+ * Not deterministic for distant memories — this is correct behavior.
+ */</span>
+<span class="kw">function</span> <span class="prop">recall</span>(bundle: <span class="ty">Int8Array</span>, sourceId: <span class="ty">string</span>, verbType: <span class="ty">string</span>, targetId: <span class="ty">string</span>, seed: <span class="ty">number</span>): <span class="ty">number</span></pre>
+
+    <h4>Dimension as character attribute</h4>
+    <table>
+      <tr><th>hdcDim</th><th>Approximate capacity</th><th>Suggested NPC tier</th></tr>
+      <tr><td>1024</td><td>~8 distinct experiences before significant interference</td><td>Ambient, disposable</td></tr>
+      <tr><td>4096</td><td>~30–40 experiences</td><td>Named NPCs, minor characters</td></tr>
+      <tr><td>8192</td><td>~80–100 experiences</td><td>Major NPCs, faction leaders</td></tr>
+      <tr><td>16384</td><td>~200 experiences</td><td>Exceptional individuals, ancient entities</td></tr>
+    </table>
+
+    <p>The capacity estimates above assume experiences of roughly equal salience. High-weight experiences are superposed multiple times (proportional to floor(weight × n)), giving them higher retrieval fidelity at the cost of faster interference buildup for low-weight memories.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 6. FEDERATION ═══ -->
+  <div class="section" id="s6">
+    <div class="section-num">06</div>
+    <h2>Multi-Graph Federation</h2>
+
+    <div id="s6-1">
+      <h3>6.1 Graph instance ordering</h3>
+      <p>Graph instances form a directed acyclic dependency graph. An instance may only reference entities in instances that appear earlier in the topological sort. At boot, the system performs this sort and rejects any configuration containing a cycle. The canonical ordering for the three standard instances is:</p>
+      <div class="formula">static-rules → dynamic-world → political</div>
+      <p>Static-rules references nothing. Dynamic-world may reference entities defined in static-rules. Political may reference entities in both. This ordering is load order: static-rules is always initialized first.</p>
+    </div>
+
+    <div id="s6-2">
+      <h3>6.2 Boundary verb registry</h3>
+      <p>The boundary verb registry is a whitelist of permitted cross-graph edge types. Any attempted cross-graph write using a verb type not on the whitelist is rejected at commit time.</p>
+<pre><span class="cm">/**
+ * @typedef {Object} BoundaryVerb
+ */</span>
+{
+  <span class="prop">verbType</span>:            <span class="ty">string</span>,    <span class="cm">// Must have MetaVerb.crossGraphAllowed = true.</span>
+  <span class="prop">sourceGraphId</span>:       <span class="ty">string</span>,
+  <span class="prop">targetGraphId</span>:       <span class="ty">string</span>,
+  <span class="prop">transmissionFidelity</span>:<span class="ty">number</span>,    <span class="cm">// [0, 1]. See §5.5. Default: 1.0.</span>
+  <span class="prop">temporalOffset</span>:      <span class="ty">number | null</span>,<span class="cm">// Log seq delay before target receives. See §6.4.</span>
+  <span class="prop">directionality</span>:     <span class="ty">'one-way' | 'both'</span>,
+}</pre>
+
+      <div class="constraint">
+        <div class="constraint-label">Governance note</div>
+        <p>The boundary verb registry is the primary defence against domain complexity bleed. Adding a boundary verb is a deliberate design decision, not a shortcut. All boundary verb additions require explicit entry in the registry; there is no programmatic way to bypass it.</p>
+        <p>Boundary verb proliferation (many cross-graph edges accumulating over time) is a signal that two graph instances should be merged or that a third intermediate graph should be introduced.</p>
+      </div>
+    </div>
+
+    <div id="s6-3">
+      <h3>6.3 Cross-graph ID resolution</h3>
+      <p>A cross-graph reference in a VerbEdge uses a qualified entity reference of the form <code>graphId:entityId</code>. The graph registry resolves these at query time, not at write time. Write-time validation only checks that the target graphId exists and that the verbType is whitelisted for the source→target graph pair.</p>
+<pre><span class="cm">/**
+ * Resolves a possibly-qualified entity reference.
+ * If the id has no graphId prefix, the edge's own graphId is assumed.
+ */</span>
+<span class="kw">function</span> <span class="prop">resolveEntity</span>(ref: <span class="ty">string</span>, context: <span class="ty">GraphInstance</span>): <span class="ty">EntityNode | null</span>
+
+<span class="cm">/**
+ * Returns all boundary edges originating from a given entity,
+ * along with their resolved foreign targets.
+ */</span>
+<span class="kw">function</span> <span class="prop">crossGraphEdges</span>(entityId: <span class="ty">string</span>): <span class="ty">Array&lt;{edge: VerbEdge, target: EntityNode}&gt;</span></pre>
+    </div>
+
+    <div id="s6-4">
+      <h3>6.4 Temporal offset — the delay mechanic</h3>
+      <p>A boundary verb with a non-null <code>temporalOffset</code> creates a pending write queue. When the source graph commits an edge of this type, the write is placed in the queue with a <code>deliverAt</code> = current log seq + temporalOffset. The target graph processes the queue and applies the write when the global log seq reaches <code>deliverAt</code>.</p>
+<pre><span class="cm">/**
+ * @typedef {Object} PendingBoundaryWrite
+ */</span>
+{
+  <span class="prop">edgePayload</span>:  <span class="ty">VerbEdge</span>,
+  <span class="prop">deliverAt</span>:    <span class="ty">number</span>,      <span class="cm">// Global log seq number.</span>
+  <span class="prop">fidelity</span>:     <span class="ty">number</span>,      <span class="cm">// Copied from BoundaryVerb at enqueue time.</span>
+}</pre>
+      <p>The pending queue is persisted as part of the event log. On server restart, undelivered pending writes are replayed from the log and re-queued with their original <code>deliverAt</code> values. No pending write is ever lost.</p>
+      <p>The temporal offset value is expressed in log sequence units, not wall-clock time. This keeps replay fully deterministic: replaying the event log produces identical pending write delivery regardless of how long the server was running.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 7. QUERY ════════ -->
+  <div class="section" id="s7">
+    <div class="section-num">07</div>
+    <h2>Query Interface</h2>
+
+    <p class="lead">The query interface exposes four operation families. Fluent DSL syntax is deferred. The following signatures define the underlying operations that any DSL will compile to.</p>
+
+    <h4>Traversal</h4>
+<pre><span class="cm">/**
+ * Traverses the graph from a starting entity along a sequence of verb types.
+ * Each hop applies the verb's t-norm to accumulate path weight.
+ * Paths with accumulated weight &lt; epsilon are pruned.
+ *
+ * Returns the set of reachable entities and the path weight to each.
+ */</span>
+<span class="kw">async function</span> <span class="prop">traverse</span>(params: {
+  <span class="prop">startId</span>:    <span class="ty">string</span>,
+  <span class="prop">graphId</span>:    <span class="ty">string</span>,
+  <span class="prop">path</span>:       <span class="ty">Array&lt;{ verbType: string, filter?: (edge: VerbEdge) => boolean }&gt;</span>,
+  <span class="prop">crossGraph</span>: <span class="ty">boolean</span>,         <span class="cm">// Whether to follow boundary edges. Default: false.</span>
+  <span class="prop">maxDepth</span>:   <span class="ty">number</span>,          <span class="cm">// Safety cap. Default: 16.</span>
+}): <span class="ty">Promise&lt;Map&lt;string, number&gt;&gt;</span>   <span class="cm">// entityId → path weight</span></pre>
+
+    <h4>Scoring</h4>
+<pre><span class="cm">/**
+ * Returns the embedding-space score for a (source, verb, target) triple.
+ * Does not require an edge to exist. Purely geometric.
+ */</span>
+<span class="kw">function</span> <span class="prop">score</span>(sourceId, verbType, targetId, graphId): <span class="ty">number</span>   <span class="cm">// [0, 1]</span>
+
+<span class="cm">/**
+ * Returns the fuzzy weight of the best direct edge of verbType
+ * from sourceId to targetId, or 0 if none exists.
+ */</span>
+<span class="kw">function</span> <span class="prop">edgeWeight</span>(sourceId, verbType, targetId, graphId): <span class="ty">number</span></pre>
+
+    <h4>Nearest-neighbor</h4>
+<pre><span class="cm">/**
+ * Returns the k entities whose embeddings are nearest to
+ * the vector (source.embedding + verbType.embedding).
+ * Entities in a similar relational position to source, via verbType.
+ */</span>
+<span class="kw">async function</span> <span class="prop">nearest</span>(params: {
+  <span class="prop">sourceId</span>:  <span class="ty">string</span>,
+  <span class="prop">verbType</span>:  <span class="ty">string</span>,
+  <span class="prop">graphId</span>:   <span class="ty">string</span>,
+  <span class="prop">k</span>:         <span class="ty">number</span>,
+  <span class="prop">filter</span>?:   <span class="ty">(entity: EntityNode) => boolean</span>,
+}): <span class="ty">Promise&lt;Array&lt;{ entity: EntityNode, score: number }&gt;&gt;</span></pre>
+
+    <h4>Belief query</h4>
+<pre><span class="cm">/**
+ * Returns the BeliefFunction an agent holds about a given proposition.
+ * Proposition is a serialised graph pattern string.
+ * Returns null if the agent has no belief record for this proposition
+ * (not the same as mUnknown = 1.0 — that would be explicit ignorance).
+ */</span>
+<span class="kw">function</span> <span class="prop">agentBelief</span>(agentId, proposition, graphId): <span class="ty">BeliefFunction | null</span>
+
+<span class="cm">/**
+ * Returns the objective graph state for a proposition as a fuzzy weight.
+ * This is ground truth — what the graph actually contains,
+ * not what any agent believes.
+ */</span>
+<span class="kw">function</span> <span class="prop">groundTruth</span>(proposition, graphId): <span class="ty">number</span>   <span class="cm">// [0, 1]</span></pre>
+
+    <h4>Two-tier query routing</h4>
+    <p>Queries that can be satisfied from the projection cache (L4) should prefer that path for latency-sensitive callers. Queries that require ground-truth graph traversal or embedding computation are routed to the graph core (L2/L3). The query interface is responsible for this routing. Callers declare their latency requirement via a <code>freshness</code> parameter:</p>
+    <table>
+      <tr><th>freshness</th><th>Source</th><th>Latency</th><th>Staleness risk</th></tr>
+      <tr><td>'cached'</td><td>Projection cache only</td><td>~0.1ms</td><td>Up to one dirty cycle</td></tr>
+      <tr><td>'graph'</td><td>Graph core, main thread</td><td>~1–10ms</td><td>None</td></tr>
+      <tr><td>'worker'</td><td>Graph core, worker pool</td><td>~10–50ms</td><td>None, non-blocking</td></tr>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 8. PERSISTENCE ══ -->
+  <div class="section" id="s8">
+    <div class="section-num">08</div>
+    <h2>Persistence &amp; Replay</h2>
+
+    <p class="lead">The event log is the canonical persistence artifact. All graph state — including inferred edges, embedding updates, and HDC bundle mutations — can be reproduced by replaying the log from a seed. Snapshots are a performance optimization, not a source of truth.</p>
+
+    <h4>Log flush strategy</h4>
+    <table>
+      <tr><th>Graph instance</th><th>Flush trigger</th><th>Fsync policy</th></tr>
+      <tr><td>static-rules</td><td>Boot only (read-only thereafter)</td><td>Immediate</td></tr>
+      <tr><td>dynamic-world</td><td>Every N commits or T seconds (configurable)</td><td>Group fsync per flush</td></tr>
+      <tr><td>political</td><td>Every commit</td><td>Immediate (history must be preserved)</td></tr>
+    </table>
+
+    <h4>Snapshot checkpoints</h4>
+    <p>A checkpoint records the full serialised graph state at a specific log sequence number. On server start, the engine loads the most recent checkpoint and replays only the log entries after it. Checkpoints are taken automatically when the log exceeds a configurable size threshold. They are also triggered manually before server shutdown.</p>
+
+<pre><span class="cm">/**
+ * @typedef {Object} Checkpoint
+ */</span>
+{
+  <span class="prop">seq</span>:          <span class="ty">number</span>,      <span class="cm">// Log seq at which the snapshot was taken.</span>
+  <span class="prop">graphStates</span>:  <span class="ty">Map&lt;string, SerializedGraph&gt;</span>,
+  <span class="prop">pendingQueue</span>: <span class="ty">PendingBoundaryWrite[]</span>,
+  <span class="prop">rngState</span>:     <span class="ty">string</span>,      <span class="cm">// PRNG state at checkpoint time.</span>
+  <span class="prop">checksum</span>:     <span class="ty">string</span>,      <span class="cm">// SHA-256 of serialised content.</span>
+}</pre>
+
+    <h4>Determinism requirements</h4>
+    <div class="constraint">
+      <div class="constraint-label">All write paths must satisfy the following</div>
+      <p>No Math.random() or Date.now() in any code path that produces a graph mutation. Use the seeded PRNG exclusively.</p>
+      <p>No async interleaving within a single graph commit. Each commit is an atomic synchronous operation on the graph data structure, even if the flush to disk is async.</p>
+      <p>Floating-point operations that affect edge weights or embeddings must use a fixed precision rounding step (toFixed(6)) to prevent drift across replay on different hardware.</p>
+      <p>External inputs (player actions, NPC decisions) are recorded in the event log before their effects are applied. The log entry is the authoritative record of intent; the graph mutation is its consequence.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 9. NODEJS ═══════ -->
+  <div class="section" id="s9">
+    <div class="section-num">09</div>
+    <h2>Node.js Runtime Model</h2>
+
+    <h4>Thread allocation</h4>
+    <table>
+      <tr><th>Operation</th><th>Thread</th><th>Rationale</th></tr>
+      <tr><td>Graph commit (write + log)</td><td>Main</td><td>Must be synchronous and atomic</td></tr>
+      <tr><td>Embedding update</td><td>Main</td><td>O(d), fast enough if dim ≤ 256</td></tr>
+      <tr><td>HDC bundle update</td><td>Main</td><td>O(dim), fast for dim ≤ 8192</td></tr>
+      <tr><td>Deep traversal (&gt;4 hops)</td><td>Worker</td><td>Prevent event loop stall</td></tr>
+      <tr><td>Nearest-neighbor (n &gt; 10k)</td><td>Worker</td><td>O(n × d) cost</td></tr>
+      <tr><td>Influence diffusion</td><td>Worker</td><td>Iterative; unpredictable duration</td></tr>
+      <tr><td>Log flush to disk</td><td>Worker / libuv</td><td>Async I/O, non-blocking</td></tr>
+      <tr><td>Checkpoint serialisation</td><td>Worker</td><td>Large serialisation cost</td></tr>
+    </table>
+
+    <h4>Worker pool sizing</h4>
+    <p>A fixed-size worker pool of <code>max(2, os.cpus().length − 1)</code> threads handles all worker-assigned operations. The pool uses a queue with priority lanes: game-critical queries (AI decisions, player-facing results) take priority over background operations (diffusion evaluation, checkpoint writes).</p>
+
+    <h4>Main-thread budget</h4>
+    <p>The combined cost of a graph commit — validation, log append, embedding update, HDC update, dirty-flag propagation — must complete within 2ms on the target hardware. If profiling indicates this budget is regularly exceeded, the first remediation is reducing embeddingDim. The second is moving embedding updates to a worker with asynchronous reconciliation.</p>
+
+    <h4>Zone server architecture</h4>
+    <p>Each zone server owns the in-memory portion of the dynamic-world graph for its zone's entities. Cross-zone edges are stored in a shared region of the dynamic-world graph backed by a shared log segment. Entities moving between zones trigger a handoff protocol: the outgoing zone writes an <code>entity:remove</code> event, the incoming zone writes an <code>entity:create</code> event with the same id. The entity's full embedding and HDC bundle travel with the handoff payload.</p>
+
+    <h4>Hot zone policy</h4>
+    <p><code>GraphInstance.hotZoneSelector</code> is a function that takes an entity and returns true if it should be retained in memory. The default implementation keeps all entities that have been accessed in the last N minutes (configurable). Cold entities are paged to the backing store. Accessing a cold entity triggers a page-in; the entity is then subject to the hot zone policy on subsequent ticks.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ 10. OPEN ════════ -->
+  <div class="section" id="s10">
+    <div class="section-num">10</div>
+    <h2>Open Questions &amp; Decisions Required</h2>
+
+    <div class="oq"><strong>OQ-01</strong> &nbsp; Embedding dimensionality defaults require empirical validation against actual game-scale entity counts. The spec assumes 128 for dynamic-world. This should be confirmed by profiling commit latency with realistic entity density before the embedding layer is finalised.</div>
+
+    <div class="oq"><strong>OQ-02</strong> &nbsp; The HDC dimension table (§5.6) gives approximate capacity estimates. These need validation against actual interference curves using the chosen t-norm and typical experience distributions. The boundary between "ambient NPC" and "named NPC" tiers may shift significantly.</div>
+
+    <div class="oq"><strong>OQ-03</strong> &nbsp; Dempster's rule of combination produces counterintuitive results under high conflict (K near 0). A conflict resolution policy — retain higher authority, blend, or escalate — needs to be selected and registered as a graph-wide default.</div>
+
+    <div class="oq"><strong>OQ-04</strong> &nbsp; The temporal offset in §6.4 is expressed in log sequence units. The relationship between log sequence numbers and in-game time needs to be specified. If the game uses a fixed-tick server, one log seq = one tick is natural. If commits are event-driven, the conversion is less obvious.</div>
+
+    <div class="oq"><strong>OQ-05</strong> &nbsp; Nearest-neighbor queries using a naive O(n × d) scan are acceptable for small graphs but will require an HNSW index at MMORPG scale. The HNSW index must be kept consistent with embedding updates. This is a significant implementation surface that needs its own design pass.</div>
+
+    <div class="oq"><strong>OQ-06</strong> &nbsp; The query interface defines a <code>freshness</code> parameter but does not specify how the projection cache (L4) decides when a dirty component is stale enough to re-derive. The dirty cycle interval needs to be defined per component type, not globally.</div>
+
+    <div class="oq"><strong>OQ-07</strong> &nbsp; The fluent query DSL is deferred. When it is designed, it should compile to the four operation families defined in §7 without adding new runtime primitives. DSL design should happen after at least one integration test of the raw query interface validates the operation shapes.</div>
+
+    <div class="oq"><strong>OQ-08</strong> &nbsp; Floating-point determinism across Node.js versions and hardware is not guaranteed. The toFixed(6) rounding requirement in §8 needs to be stress-tested with a replay harness before being relied upon for save-game correctness.</div>
+  </div>
+
+  <p class="doc-footer">HyperCrowd · Fief · Graph Engine Technical Specification · v0.1 · Working Document · Not for external distribution</p>
+</main>
+
+<script>
+const links = document.querySelectorAll('nav a');
+const sections = [];
+links.forEach(a => {
+  const id = a.getAttribute('href').replace('#','');
+  const el = document.getElementById(id);
+  if(el) sections.push({el, a});
+});
+function onScroll(){
+  const y = window.scrollY + 120;
+  let active = null;
+  for(let i = sections.length-1; i >= 0; i--){
+    if(sections[i].el.offsetTop <= y){ active = sections[i]; break; }
+  }
+  links.forEach(a => a.classList.remove('active'));
+  if(active) active.a.classList.add('active');
+}
+window.addEventListener('scroll', onScroll, {passive:true});
+onScroll();
+</script>
+</body>
+</html>

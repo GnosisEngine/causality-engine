@@ -1,0 +1,50 @@
+{
+  "name": "@gnosisengine/entity-graph",
+  "version": "1.0.0",
+  "description": "",
+  "author": "GnosisEngine",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GnosisEngine/entity-graph.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GnosisEngine/entity-graph/issues"
+  },
+  "homepage": "https://github.com/GnosisEngine/entity-graph#readme",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc --project tsconfig.json && tsc-alias",
+    "clean": "rm -rf dist/*",
+    "prebuild": "npm run clean",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "tsc --noEmit",
+    "prepare": "husky"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
+    "@vitest/coverage-v8": "^4.1.6",
+    "eslint": "^10.3.0",
+    "husky": "^9.1.7",
+    "tsc-alias": "^1.8.17",
+    "tsx": "^4.22.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}
