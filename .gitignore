@@ -1,6 +1,7 @@
 # Build output
 dist/
 .husky/_
+!.husky/pre-commit
 
 # Dependencies
 node_modules/
