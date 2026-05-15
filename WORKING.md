@@ -1,5 +1,3 @@
-https://claude.ai/chat/64ba802a-0579-496a-aa1f-e27c4d43c7bc
-
 # Causality Engine — Working State
 
 ## Conventions (always apply)
@@ -15,19 +13,19 @@ https://claude.ai/chat/64ba802a-0579-496a-aa1f-e27c4d43c7bc
 - Write-path arithmetic: always use `@/common/decimal/index.js` — never raw float ops on weights/embeddings
 
 ## Implementation Order
-Phase 1 — Common utilities:     `common/types`, `common/prng`, `common/decimal`, `common/serialization`, `common/bench`
-Phase 2 — Math primitives:      `math/fuzzy`, `math/policy`, `math/dempster-shafer`, `math/hdc`, `math/embeddings`, `math/diffusion`, `math/index.ts`
-Phase 3 — Meta-graph:           `meta-graph/validator`, `taxonomy`, `stratification`, `registry`, `index.ts`
-Phase 4 — Graph core:           `graph-core/store`, `validator`, `commit`, `index.ts`
-Phase 5 — Runtime utilities:    `runtime/worker-pool`, `runtime/tick`
-Phase 6 — Persistence:          `persistence/event-log`, `checkpoint`, `replay`, `index.ts`
-Phase 7 — Federation:           `federation/dag`, `boundary-registry`, `id-resolver`, `pending-queue`, `index.ts`
-Phase 8 — Projection cache:     `projection-cache/registry`, `dirty-flags`, `deriver`, `runtime/hot-zone`, `index.ts`
-Phase 9 — Query interface:      `query/traversal`, `scoring`, `nearest`, `belief`, `router`, `index.ts`
-Phase 10 — Top-level wiring:    `runtime/index.ts`, `src/index.ts`
+Phase 1  — Common utilities:     `common/types`, `common/prng`, `common/decimal`, `common/serialization`, `common/bench`
+Phase 2  — Math primitives:      `math/fuzzy`, `math/policy`, `math/dempster-shafer`, `math/hdc`, `math/embeddings`, `math/diffusion`, `math/index.ts`
+Phase 3  — Meta-graph:           `meta-graph/validator`, `taxonomy`, `stratification`, `registry`, `index.ts`
+Phase 4  — Graph core:           `graph-core/store`, `validator`, `commit`, `index.ts`
+Phase 5  — Runtime utilities:    `runtime/worker-pool`, `runtime/tick`
+Phase 6  — Persistence:          `persistence/event-log`, `checkpoint`, `replay`, `index.ts`
+Phase 7  — Federation:           `federation/dag`, `boundary-registry`, `id-resolver`, `pending-queue`, `index.ts`
+Phase 8  — Projection cache:     `projection-cache/registry`, `dirty-flags`, `deriver`, `runtime/hot-zone`, `index.ts`
+Phase 9  — Query interface:      `query/traversal`, `scoring`, `nearest`, `belief`, `router`, `index.ts`
+Phase 10 — Top-level wiring:     `runtime/index.ts`, `src/index.ts`
 
 ## Current Phase
-**Phase 3 — Meta-graph** — NOT STARTED
+**Phase 4 — Graph core** — NOT STARTED
 
 ## Completed
 **Phase 1 — Common utilities** ✓ 41/41 tests passing
@@ -42,9 +40,16 @@ Phase 10 — Top-level wiring:    `runtime/index.ts`, `src/index.ts`
 - `math/policy/` — geometric, harmonic, cutoff policy functions; verifyPolicy simulation
 - `math/dempster-shafer/` — createBelief, unknownBelief, discountBelief; dempsterCombine, computeK; retainAuthority, blend, escalate
 - `math/hdc/` — createBaseVector (djb2+PRNG), bind (element-wise multiply), remember (superpose+binarize), recall (cosine similarity)
-- `math/embeddings/` — updateEmbedding (TransE, mutates in place); score, nearest, buildQueryVector; NaiveANNIndex (hnswlib-node deferred — needs native build env); createUpdateQueue
-- `math/diffusion/` — buildTrustMatrix (row-normalised, self-weight for isolated nodes); deGroot, friedkinJohnsen (NOTE: pure symmetric cycles without self-weight oscillate — callers must include self-edges for aperiodicity)
+- `math/embeddings/` — updateEmbedding (TransE, mutates in place); score, nearest, buildQueryVector; NaiveANNIndex (hnswlib-node deferred); createUpdateQueue
+- `math/diffusion/` — buildTrustMatrix (row-normalised, self-weight for isolated nodes); deGroot, friedkinJohnsen
 - `math/index.ts` — namespace barrel (Fuzzy, Policy, DS, HDC, Embeddings, Diffusion)
+
+**Phase 3 — Meta-graph** ✓ 44/44 tests passing
+- `meta-graph/types.d.ts` — MetaVerb, MetaTaxonomyEdge, InferenceRule, InferenceCondition, StratificationResult
+- `meta-graph/validator.ts` — validateMetaVerb, validateTaxonomyEdge, validateInferenceRule (pure, stateless)
+- `meta-graph/taxonomy.ts` — getSubtypes (transitive BFS), isSubtypeOf, getInverse, getExclusions, getImplications, impliesEdgesToRules
+- `meta-graph/stratification.ts` — Kahn's topological sort over negation dependency graph; cycle detection
+- `meta-graph/registry.ts` — createMetaGraphRegistry: stateful store, transaction-per-registration, re-stratifies on every change
 
 ## Open Decisions
 - OQ-05 (HNSW): use `hnswlib-node`. Files: `math/embeddings/hnsw.ts`, `math/embeddings/update-queue.ts`. Naive scan fallback during index warm-up.
@@ -54,8 +59,9 @@ Phase 10 — Top-level wiring:    `runtime/index.ts`, `src/index.ts`
 - DS conflict resolution (OQ-03): `retain-authority`, `blend`, `escalate` — extensible registry.
 - Temporal offset (OQ-04): expressed in ticks. 1 log seq = 1 tick.
 - Vitest config: updated to discover tests in both `tests/` and `src/**/tests/`.
+- DeGroot aperiodicity: pure symmetric cycles without self-weight oscillate — callers must include self-edges. Document in buildTrustMatrix JSDoc before Phase 4.
 
 ## Next Session Starting Point
-Begin Phase 3. All Phase 1 and Phase 2 modules are complete and tested.
-`meta-graph/validator.ts` first: write-time invariant checks (entity type exists, verb type registered, weight in [0,1], confidence constraints, crossGraphAllowed on boundary verbs).
-Then: `taxonomy.ts`, `stratification.ts`, `registry.ts`, `index.ts`.
+Begin Phase 4 — Graph core.
+`graph-core/store.ts` first: in-memory entity and edge storage (Map-backed).
+Then: `graph-core/validator.ts` (write-time checks against MetaGraphRegistry), `graph-core/commit.ts` (atomic commit: validate → log append → mutate → embedding update → HDC update), `graph-core/index.ts`.
