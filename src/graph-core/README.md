@@ -1,0 +1,3 @@
+Two things surfaced during this phase worth noting. The verbTypeToFloat32 helper is doing the same djb2 seeding as createBaseVector in math/hdc but producing Float32Array values instead of Int8Array. There is an argument for consolidating these into a single seeded-vector-from-id utility in common/prng that takes a output type parameter — worth considering before Phase 9 when the query layer will also need seeded vectors for relation embeddings.
+
+The shared store test isolation bug is a good reminder that beforeEach must always recreate any stateful fixture that individual tests mutate. The validator describe block was the only place in Phase 4 where this was needed, but it is worth holding as a standing discipline going forward.
